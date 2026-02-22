@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+  body {
+    @apply bg-slate-50 text-slate-800;
+    overscroll-behavior: none;
+  }
+}
+
+@layer components {
+  /* iPadタッチ操作向け最小タップターゲット */
+  .btn {
+    @apply inline-flex items-center justify-center min-h-[48px] px-5 py-3 rounded-xl font-semibold text-base transition-all duration-150 active:scale-95 select-none;
+  }
+  .btn-primary {
+    @apply btn bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm;
+  }
+  .btn-secondary {
+    @apply btn bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 active:bg-slate-100 shadow-sm;
+  }
+  .btn-danger {
+    @apply btn bg-red-500 text-white hover:bg-red-600 active:bg-red-700 shadow-sm;
+  }
+  .btn-success {
+    @apply btn bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-sm;
+  }
+  .btn-sm {
+    @apply min-h-[38px] px-3 py-2 text-sm rounded-lg;
+  }
+
+  /* フォーム部品 */
+  .form-label {
+    @apply block text-sm font-semibold text-slate-600 mb-1;
+  }
+  .form-input {
+    @apply w-full min-h-[48px] px-4 py-3 border border-slate-300 rounded-xl text-base bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition;
+  }
+  .form-select {
+    @apply form-input appearance-none cursor-pointer;
+  }
+
+  /* カード */
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-slate-200 p-5;
+  }
+
+  /* タブ */
+  .tab-item {
+    @apply flex-1 py-3 px-4 text-center text-sm font-semibold transition-colors duration-150 border-b-2;
+  }
+  .tab-active {
+    @apply text-blue-600 border-blue-600;
+  }
+  .tab-inactive {
+    @apply text-slate-500 border-transparent hover:text-slate-700;
+  }
+
+  /* バッジ */
+  .badge-in {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800;
+  }
+  .badge-out {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-100 text-orange-800;
+  }
+}
+
+/* スクロールバーのスタイル（iPad向け） */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+}

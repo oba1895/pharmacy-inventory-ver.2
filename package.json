@@ -1,0 +1,16 @@
+{
+  "name": "pharmacy-inventory",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently --names \"BACKEND,FRONTEND\" --prefix-colors \"blue,green\" \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "tunnel": "node tunnel.js",
+    "dev:tunnel": "concurrently --names \"BACKEND,FRONTEND,TUNNEL\" --prefix-colors \"blue,green,magenta\" \"cd backend && npm run dev\" \"cd frontend && npm run dev\" \"node tunnel.js\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
