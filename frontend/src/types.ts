@@ -43,5 +43,6 @@ export interface Transaction {
   ward_id: number | null
   ward_name: string | null
   notes: string | null
+  expiry_date: string | null
   created_at: string
 }

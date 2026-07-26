@@ -1,3 +1,7 @@
+import dotenv from 'dotenv'
+import path from 'path'
+dotenv.config({ path: path.join(__dirname, '../../.env') })
+
 import express from 'express'
 import cors from 'cors'
 import { initDatabase } from './database'
@@ -23,10 +27,10 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
+const adminPin = process.env.ADMIN_PIN || '1234'
 app.listen(PORT, '0.0.0.0', () => {
   console.log('\n💊 調剤薬局 在庫管理システム - バックエンドサーバー')
   console.log(`📡 ポート ${PORT} で起動中`)
-  console.log('\n🔑 ログイン情報:')
-  console.log('   管理者: admin / admin123')
-  console.log('   閲覧者: staff / staff123\n')
+  console.log(`🔑 管理者PIN: ${adminPin}`)
+  console.log('   ※ PINを変更するには .env ファイルの ADMIN_PIN を編集してください\n')
 })

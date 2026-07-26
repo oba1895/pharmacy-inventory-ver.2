@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Medicine, Supplier, Pharmacist, Ward } from '../types'
 import client from '../api/client'
+import BulkImport from './BulkImport'
 
 interface Props {
   medicines: Medicine[]
@@ -119,6 +120,7 @@ export default function MasterDataManager({ medicines, suppliers, pharmacists, w
               追加
             </button>
           </div>
+          <BulkImport endpoint="/medicines/bulk" hasUnit nameLabel="医薬品名" templateName="医薬品" onDone={onRefresh} />
           <div className="divide-y divide-slate-100">
             {medicines.map((m) => (
               <div key={m.id} className="flex items-center justify-between py-3 gap-3">
@@ -156,6 +158,7 @@ export default function MasterDataManager({ medicines, suppliers, pharmacists, w
               追加
             </button>
           </div>
+          <BulkImport endpoint="/master/suppliers/bulk" nameLabel="購入先名" templateName="購入先" onDone={onRefresh} />
           <div className="divide-y divide-slate-100">
             {suppliers.map((s) => (
               <div key={s.id} className="flex items-center justify-between py-3">
@@ -183,6 +186,7 @@ export default function MasterDataManager({ medicines, suppliers, pharmacists, w
               追加
             </button>
           </div>
+          <BulkImport endpoint="/master/pharmacists/bulk" nameLabel="薬剤師名" templateName="薬剤師" onDone={onRefresh} />
           <div className="divide-y divide-slate-100">
             {pharmacists.map((p) => (
               <div key={p.id} className="flex items-center justify-between py-3">
@@ -210,6 +214,7 @@ export default function MasterDataManager({ medicines, suppliers, pharmacists, w
               追加
             </button>
           </div>
+          <BulkImport endpoint="/master/wards/bulk" nameLabel="病棟名" templateName="病棟" onDone={onRefresh} />
           <div className="divide-y divide-slate-100">
             {wards.length === 0 && (
               <p className="text-slate-400 text-sm py-4 text-center">病棟が登録されていません</p>

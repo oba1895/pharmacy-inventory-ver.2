@@ -7,10 +7,9 @@ import LoginPage from './pages/LoginPage'
 import AdminPage from './pages/AdminPage'
 import ViewerPage from './pages/ViewerPage'
 
-function ProtectedRoute({ children, role }: { children: ReactNode; role: 'admin' | 'viewer' }) {
-  const { isAuthenticated, user } = useAuth()
-  if (!isAuthenticated) return <Navigate to="/login" replace />
-  if (user?.role !== role) return <Navigate to={user?.role === 'admin' ? '/admin' : '/viewer'} replace />
+function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { isAuthenticated } = useAuth()
+  if (!isAuthenticated) return <Navigate to="/viewer" replace />
   return <>{children}</>
 }
 
@@ -27,7 +26,7 @@ function AuthenticatedLayout({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated } = useAuth()
 
   return (
     <BrowserRouter>
@@ -37,32 +36,20 @@ export default function App() {
             path="/login"
             element={
               isAuthenticated
-                ? <Navigate to={user?.role === 'admin' ? '/admin' : '/viewer'} replace />
+                ? <Navigate to="/admin" replace />
                 : <LoginPage />
             }
           />
           <Route
             path="/admin"
             element={
-              <ProtectedRoute role="admin">
+              <ProtectedRoute>
                 <AdminPage />
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/viewer"
-            element={
-              <ProtectedRoute role="viewer">
-                <ViewerPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="*"
-            element={
-              <Navigate to={isAuthenticated ? (user?.role === 'admin' ? '/admin' : '/viewer') : '/login'} replace />
-            }
-          />
+          <Route path="/viewer" element={<ViewerPage />} />
+          <Route path="*" element={<Navigate to="/viewer" replace />} />
         </Routes>
       </AuthenticatedLayout>
     </BrowserRouter>

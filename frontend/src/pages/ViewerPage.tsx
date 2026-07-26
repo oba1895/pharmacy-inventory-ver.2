@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import { Medicine, Transaction } from '../types'
 import client from '../api/client'
 import InventoryTable from '../components/InventoryTable'
@@ -10,7 +10,7 @@ type Tab = 'inventory' | 'history'
 const POLL_INTERVAL_MS = 30_000 // 30秒ごとに自動更新
 
 export default function ViewerPage() {
-  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Tab>('inventory')
   const [medicines, setMedicines] = useState<Medicine[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -78,12 +78,11 @@ export default function ViewerPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-semibold">{user?.displayName}</p>
-              <p className="text-slate-300 text-xs">閲覧モード</p>
-            </div>
-            <button onClick={logout} className="btn btn-secondary btn-sm text-sm">
-              ログアウト
+            <button
+              onClick={() => navigate('/login')}
+              className="btn btn-secondary btn-sm text-sm"
+            >
+              管理者モード
             </button>
           </div>
         </div>

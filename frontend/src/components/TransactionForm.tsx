@@ -22,6 +22,7 @@ interface FormData {
   pharmacist_id: string
   ward_id: string
   notes: string
+  expiry_date: string
 }
 
 function today(): string {
@@ -38,6 +39,7 @@ const EMPTY_FORM: FormData = {
   pharmacist_id: '',
   ward_id: '',
   notes: '',
+  expiry_date: '',
 }
 
 export default function TransactionForm({ medicines, suppliers, pharmacists, wards, editingTransaction, onSuccess, onCancelEdit }: Props) {
@@ -59,6 +61,7 @@ export default function TransactionForm({ medicines, suppliers, pharmacists, war
         pharmacist_id: String(editingTransaction.pharmacist_id),
         ward_id: editingTransaction.ward_id ? String(editingTransaction.ward_id) : '',
         notes: editingTransaction.notes || '',
+        expiry_date: editingTransaction.expiry_date || '',
       })
     } else {
       setForm(EMPTY_FORM)
@@ -83,7 +86,7 @@ export default function TransactionForm({ medicines, suppliers, pharmacists, war
     if (!form.quantity || parseInt(form.quantity) <= 0) { setError('数量は1以上の整数を入力してください'); return }
     if (!form.pharmacist_id) { setError('薬剤師名を選択してください'); return }
     if (!form.date) { setError('日付を入力してください'); return }
-    if (form.transaction_type === '出庫' && !form.patient_name.trim()) { setError('出庫の場合は患者氏名を入力してください'); return }
+    if (form.transaction_type === '出庫' && !form.patient_name.trim()) { setError('出庫の場合は患者イニシャルを入力してください'); return }
     if (form.transaction_type === '入庫' && !form.supplier_id) { setError('入庫の場合は購入先を選択してください'); return }
 
     setLoading(true)
@@ -98,6 +101,7 @@ export default function TransactionForm({ medicines, suppliers, pharmacists, war
         pharmacist_id: parseInt(form.pharmacist_id),
         ward_id: form.ward_id ? parseInt(form.ward_id) : null,
         notes: form.notes.trim() || null,
+        expiry_date: form.transaction_type === '入庫' ? (form.expiry_date || null) : null,
       }
 
       if (isEditing && editingTransaction) {
@@ -215,10 +219,26 @@ export default function TransactionForm({ medicines, suppliers, pharmacists, war
           />
         </div>
 
+        {/* 使用期限（入庫時のみ） */}
+        {form.transaction_type === '入庫' && (
+          <div>
+            <label className="form-label">
+              使用期限
+              <span className="text-slate-400 text-xs ml-2">（任意）</span>
+            </label>
+            <input
+              type="month"
+              value={form.expiry_date}
+              onChange={(e) => set('expiry_date', e.target.value)}
+              className="form-input"
+            />
+          </div>
+        )}
+
         {/* 患者氏名 */}
         <div>
           <label className="form-label">
-            患者氏名（フルネーム）
+            患者イニシャル
             {form.transaction_type === '出庫' && <span className="text-red-500 ml-1">*</span>}
             {form.transaction_type === '入庫' && <span className="text-slate-400 text-xs ml-2">（入庫の場合は任意）</span>}
           </label>
@@ -226,7 +246,7 @@ export default function TransactionForm({ medicines, suppliers, pharmacists, war
             type="text"
             value={form.patient_name}
             onChange={(e) => set('patient_name', e.target.value)}
-            placeholder="例: 山田 太郎"
+            placeholder="例: Y.T."
             className="form-input"
           />
         </div>

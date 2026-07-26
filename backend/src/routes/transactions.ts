@@ -8,7 +8,7 @@ const TX_SELECT = `
   SELECT
     t.id, t.medicine_id, t.transaction_type, t.quantity,
     t.patient_name, t.date, t.supplier_id, t.pharmacist_id,
-    t.ward_id, t.notes, t.created_at,
+    t.ward_id, t.notes, t.expiry_date, t.created_at,
     m.name  AS medicine_name,
     s.name  AS supplier_name,
     p.name  AS pharmacist_name,
@@ -20,8 +20,8 @@ const TX_SELECT = `
   LEFT JOIN wards w ON t.ward_id = w.id
 `
 
-// GET /api/transactions - 受払履歴取得（全権限）
-router.get('/', authenticate, (req: AuthRequest, res: Response): void => {
+// GET /api/transactions - 受払履歴取得（認証不要）
+router.get('/', (req: AuthRequest, res: Response): void => {
   const { medicine_id, transaction_type, start_date, end_date } = req.query
   let where = 'WHERE 1=1'
   const params: (string | number)[] = []
@@ -37,7 +37,7 @@ router.get('/', authenticate, (req: AuthRequest, res: Response): void => {
 
 // POST /api/transactions - 受払登録（管理者のみ）
 router.post('/', authenticate, requireAdmin, (req: AuthRequest, res: Response): void => {
-  const { medicine_id, transaction_type, quantity, patient_name, date, supplier_id, pharmacist_id, ward_id, notes } = req.body
+  const { medicine_id, transaction_type, quantity, patient_name, date, supplier_id, pharmacist_id, ward_id, notes, expiry_date } = req.body
 
   if (!medicine_id || !transaction_type || !quantity || !date || !pharmacist_id) {
     res.status(400).json({ error: '必須項目（医薬品名・入出庫区分・数量・日付・薬剤師名）が未入力です' })
@@ -68,14 +68,15 @@ router.post('/', authenticate, requireAdmin, (req: AuthRequest, res: Response): 
 
   const doInsert = db.transaction(() => {
     const result = db.prepare(`
-      INSERT INTO transactions (medicine_id, transaction_type, quantity, patient_name, date, supplier_id, pharmacist_id, ward_id, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO transactions (medicine_id, transaction_type, quantity, patient_name, date, supplier_id, pharmacist_id, ward_id, notes, expiry_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       medicine_id, transaction_type, qty,
       patient_name || null, date,
       supplier_id || null, pharmacist_id,
       ward_id || null,
-      notes || null
+      notes || null,
+      expiry_date || null
     )
     db.prepare(`
       UPDATE medicines SET current_stock = current_stock + ?, updated_at = datetime('now', 'localtime') WHERE id = ?
@@ -91,7 +92,7 @@ router.post('/', authenticate, requireAdmin, (req: AuthRequest, res: Response): 
 // PUT /api/transactions/:id - 受払編集（管理者のみ）
 router.put('/:id', authenticate, requireAdmin, (req: AuthRequest, res: Response): void => {
   const id = parseInt(req.params.id)
-  const { medicine_id, transaction_type, quantity, patient_name, date, supplier_id, pharmacist_id, ward_id, notes } = req.body
+  const { medicine_id, transaction_type, quantity, patient_name, date, supplier_id, pharmacist_id, ward_id, notes, expiry_date } = req.body
 
   if (!medicine_id || !transaction_type || !quantity || !date || !pharmacist_id) {
     res.status(400).json({ error: '必須項目が未入力です' })
@@ -134,8 +135,8 @@ router.put('/:id', authenticate, requireAdmin, (req: AuthRequest, res: Response)
       db.prepare('UPDATE medicines SET current_stock = current_stock + ?, updated_at = datetime(\'now\', \'localtime\') WHERE id = ?').run(newEffect, medicine_id)
       db.prepare(`
         UPDATE transactions SET medicine_id=?, transaction_type=?, quantity=?, patient_name=?, date=?,
-          supplier_id=?, pharmacist_id=?, ward_id=?, notes=? WHERE id=?
-      `).run(medicine_id, transaction_type, qty, patient_name || null, date, supplier_id || null, pharmacist_id, ward_id || null, notes || null, id)
+          supplier_id=?, pharmacist_id=?, ward_id=?, notes=?, expiry_date=? WHERE id=?
+      `).run(medicine_id, transaction_type, qty, patient_name || null, date, supplier_id || null, pharmacist_id, ward_id || null, notes || null, expiry_date || null, id)
     })()
   } else {
     const currentStock = (db.prepare('SELECT current_stock FROM medicines WHERE id = ?').get(medicine_id) as { current_stock: number }).current_stock
@@ -148,8 +149,8 @@ router.put('/:id', authenticate, requireAdmin, (req: AuthRequest, res: Response)
       db.prepare('UPDATE medicines SET current_stock = current_stock + ?, updated_at = datetime(\'now\', \'localtime\') WHERE id = ?').run(netChange, medicine_id)
       db.prepare(`
         UPDATE transactions SET medicine_id=?, transaction_type=?, quantity=?, patient_name=?, date=?,
-          supplier_id=?, pharmacist_id=?, ward_id=?, notes=? WHERE id=?
-      `).run(medicine_id, transaction_type, qty, patient_name || null, date, supplier_id || null, pharmacist_id, ward_id || null, notes || null, id)
+          supplier_id=?, pharmacist_id=?, ward_id=?, notes=?, expiry_date=? WHERE id=?
+      `).run(medicine_id, transaction_type, qty, patient_name || null, date, supplier_id || null, pharmacist_id, ward_id || null, notes || null, expiry_date || null, id)
     })()
   }
 

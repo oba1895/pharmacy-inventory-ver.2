@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { Medicine, Supplier, Pharmacist, Ward, Transaction } from '../types'
 import client from '../api/client'
@@ -6,11 +7,13 @@ import InventoryTable from '../components/InventoryTable'
 import TransactionForm from '../components/TransactionForm'
 import TransactionHistory from '../components/TransactionHistory'
 import MasterDataManager from '../components/MasterDataManager'
+import ExpiryTab from '../components/ExpiryTab'
 
-type Tab = 'inventory' | 'form' | 'history' | 'master'
+type Tab = 'inventory' | 'form' | 'history' | 'expiry' | 'master'
 
 export default function AdminPage() {
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Tab>('inventory')
   const [medicines, setMedicines] = useState<Medicine[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -95,6 +98,7 @@ export default function AdminPage() {
     { key: 'inventory', label: '在庫一覧', icon: '📦' },
     { key: 'form', label: '受払入力', icon: '✏️' },
     { key: 'history', label: '受払履歴', icon: '📋' },
+    { key: 'expiry', label: '使用期限', icon: '📅' },
     { key: 'master', label: 'マスタ管理', icon: '⚙️' },
   ]
 
@@ -111,12 +115,11 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-semibold">{user?.displayName}</p>
-              <p className="text-blue-200 text-xs">管理者</p>
-            </div>
-            <button onClick={logout} className="btn btn-secondary btn-sm text-sm">
-              ログアウト
+            <button
+              onClick={() => { logout(); navigate('/viewer') }}
+              className="btn btn-secondary btn-sm text-sm"
+            >
+              閲覧モードへ
             </button>
           </div>
         </div>
@@ -186,6 +189,14 @@ export default function AdminPage() {
                 onDelete={handleDelete}
               />
             </div>
+          )}
+
+          {activeTab === 'expiry' && (
+            <ExpiryTab
+              medicines={medicines}
+              transactions={transactions}
+              loading={loadingMeds || loadingTxs}
+            />
           )}
 
           {activeTab === 'master' && (

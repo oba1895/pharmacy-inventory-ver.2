@@ -18,8 +18,77 @@ export default function TransactionHistory({ transactions, loading, isAdmin, onE
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
   const [filterType, setFilterType] = useState<'全て' | '入庫' | '出庫'>('全て')
   const [filterMedicine, setFilterMedicine] = useState('')
-  const [filterPatient, setFilterPatient] = useState('')
   const [filterWard, setFilterWard] = useState('')
+  const [filterSupplier, setFilterSupplier] = useState('')
+
+  function handlePrint(rows: Transaction[]) {
+    const filterLabels: string[] = []
+    if (filterType !== '全て') filterLabels.push(`区分: ${filterType}`)
+    const medName = rows.length > 0 && filterMedicine
+      ? transactions.find(t => t.medicine_id === parseInt(filterMedicine))?.medicine_name
+      : null
+    if (medName) filterLabels.push(`医薬品: ${medName}`)
+if (filterWard) filterLabels.push(`病棟: ${filterWard}`)
+
+    const now = new Date()
+    const printDate = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
+    const rowsHtml = rows.map(tx => `
+      <tr>
+        <td>${formatDate(tx.date)}</td>
+        <td>${tx.medicine_name}</td>
+        <td class="center">${tx.transaction_type}</td>
+        <td class="right">${tx.transaction_type === '入庫' ? '+' : '-'}${tx.quantity}</td>
+        <td>${tx.patient_name ?? '—'}</td>
+        <td>${tx.supplier_name ?? '—'}</td>
+        <td>${tx.ward_name ?? '—'}</td>
+        <td>${tx.pharmacist_name}</td>
+      </tr>
+    `).join('')
+
+    const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8"/>
+  <title>受払履歴</title>
+  <style>
+    body { font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; font-size: 11px; color: #111; margin: 16px; }
+    h1 { font-size: 15px; margin: 0 0 4px; }
+    .meta { font-size: 10px; color: #555; margin-bottom: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f1f5f9; text-align: left; padding: 5px 8px; border: 1px solid #cbd5e1; font-size: 10px; }
+    td { padding: 4px 8px; border: 1px solid #e2e8f0; vertical-align: middle; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <h1>受払履歴</h1>
+  <div class="meta">
+    印刷日時: ${printDate}
+    ${filterLabels.length > 0 ? `　|　絞り込み: ${filterLabels.join('、')}` : ''}
+    　|　件数: ${rows.length} 件
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>日付</th><th>医薬品名</th><th>区分</th><th>数量</th>
+        <th>患者イニシャル</th><th>購入先</th><th>病棟</th><th>薬剤師</th>
+      </tr>
+    </thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+</body>
+</html>`
+
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (!win) return
+    win.document.write(html)
+    win.document.close()
+    win.onload = () => { win.focus(); win.print() }
+  }
 
   const medicineNames = useMemo(() => {
     const names = [...new Set(transactions.map((t) => t.medicine_name))].sort()
@@ -31,15 +100,20 @@ export default function TransactionHistory({ transactions, loading, isAdmin, onE
     return names
   }, [transactions])
 
+  const supplierNames = useMemo(() => {
+    const names = [...new Set(transactions.filter((t) => t.supplier_name).map((t) => t.supplier_name as string))].sort()
+    return names
+  }, [transactions])
+
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
       if (filterType !== '全て' && tx.transaction_type !== filterType) return false
       if (filterMedicine && tx.medicine_id !== parseInt(filterMedicine)) return false
-      if (filterPatient && !tx.patient_name?.includes(filterPatient)) return false
       if (filterWard && tx.ward_name !== filterWard) return false
+      if (filterSupplier && tx.supplier_name !== filterSupplier) return false
       return true
     })
-  }, [transactions, filterType, filterMedicine, filterPatient, filterWard])
+  }, [transactions, filterType, filterMedicine, filterWard, filterSupplier])
 
   if (loading) {
     return (
@@ -88,16 +162,21 @@ export default function TransactionHistory({ transactions, loading, isAdmin, onE
             </select>
           </div>
 
-          {/* 患者名フィルタ */}
-          <div className="flex-1 min-w-[140px]">
-            <input
-              type="text"
-              value={filterPatient}
-              onChange={(e) => setFilterPatient(e.target.value)}
-              placeholder="患者名で検索"
-              className="form-input py-2 text-sm"
-            />
-          </div>
+          {/* 購入先フィルタ */}
+          {supplierNames.length > 0 && (
+            <div className="flex-1 min-w-[140px]">
+              <select
+                value={filterSupplier}
+                onChange={(e) => setFilterSupplier(e.target.value)}
+                className="form-select py-2 text-sm"
+              >
+                <option value="">購入先: 全て</option>
+                {supplierNames.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* 病棟フィルタ */}
           {wardNames.length > 0 && (
@@ -116,14 +195,27 @@ export default function TransactionHistory({ transactions, loading, isAdmin, onE
           )}
 
           {/* リセット */}
-          {(filterType !== '全て' || filterMedicine || filterPatient || filterWard) && (
+          {(filterType !== '全て' || filterMedicine || filterWard || filterSupplier) && (
             <button
-              onClick={() => { setFilterType('全て'); setFilterMedicine(''); setFilterPatient(''); setFilterWard('') }}
+              onClick={() => { setFilterType('全て'); setFilterMedicine(''); setFilterWard(''); setFilterSupplier('') }}
               className="btn btn-secondary btn-sm text-sm"
             >
               リセット
             </button>
           )}
+
+          {/* 印刷 */}
+          <button
+            onClick={() => handlePrint(filtered)}
+            disabled={filtered.length === 0}
+            className="btn btn-secondary btn-sm text-sm ml-auto disabled:opacity-40"
+          >
+            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            印刷
+          </button>
         </div>
       </div>
 
@@ -141,8 +233,8 @@ export default function TransactionHistory({ transactions, loading, isAdmin, onE
                   <th className="text-left px-4 py-4 text-slate-600 font-semibold whitespace-nowrap">医薬品名</th>
                   <th className="text-center px-4 py-4 text-slate-600 font-semibold whitespace-nowrap">区分</th>
                   <th className="text-right px-4 py-4 text-slate-600 font-semibold whitespace-nowrap">数量</th>
-                  <th className="text-left px-4 py-4 text-slate-600 font-semibold whitespace-nowrap">患者氏名</th>
-                  <th className="text-left px-4 py-4 text-slate-600 font-semibold whitespace-nowrap hidden lg:table-cell">購入先</th>
+                  <th className="text-left px-4 py-4 text-slate-600 font-semibold whitespace-nowrap">患者イニシャル</th>
+                  <th className="text-left px-4 py-4 text-slate-600 font-semibold whitespace-nowrap">購入先</th>
                   <th className="text-left px-4 py-4 text-slate-600 font-semibold whitespace-nowrap hidden md:table-cell">病棟</th>
                   <th className="text-left px-4 py-4 text-slate-600 font-semibold whitespace-nowrap hidden md:table-cell">薬剤師</th>
                   {isAdmin && <th className="text-center px-4 py-4 text-slate-600 font-semibold whitespace-nowrap">操作</th>}
@@ -165,7 +257,7 @@ export default function TransactionHistory({ transactions, loading, isAdmin, onE
                     <td className="px-4 py-3 text-slate-700">
                       {tx.patient_name || <span className="text-slate-300">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-slate-500 hidden lg:table-cell">
+                    <td className="px-4 py-3 text-slate-500">
                       {tx.supplier_name || <span className="text-slate-300">—</span>}
                     </td>
                     <td className="px-4 py-3 text-slate-500 hidden md:table-cell whitespace-nowrap">

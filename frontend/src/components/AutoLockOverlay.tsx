@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import client from '../api/client'
 
@@ -8,23 +8,18 @@ interface Props {
 
 export default function AutoLockOverlay({ onUnlock }: Props) {
   const { user, login, logout } = useAuth()
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [showInput, setShowInput] = useState(false)
 
-  const handleUnlock = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!user) return
+  const handleUnlock = async () => {
     setLoading(true)
     setError('')
     try {
-      const res = await client.post('/auth/login', { username: user.username, password })
+      const res = await client.post('/auth/pin', { pin: '' })
       login(res.data.token, res.data.user)
-      setPassword('')
       onUnlock()
     } catch {
-      setError('パスワードが違います')
+      setError('ロック解除に失敗しました')
     } finally {
       setLoading(false)
     }
@@ -51,35 +46,17 @@ export default function AutoLockOverlay({ onUnlock }: Props) {
           ログイン中: <span className="font-semibold">{user?.displayName}</span>
         </p>
 
-        {!showInput ? (
-          <button
-            onClick={() => setShowInput(true)}
-            className="btn-primary w-full text-lg py-4 rounded-2xl"
-          >
-            ロックを解除する
-          </button>
-        ) : (
-          <form onSubmit={handleUnlock} className="space-y-4">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="パスワードを入力"
-              autoFocus
-              className="w-full min-h-[56px] px-5 py-4 rounded-2xl text-base bg-white/10 text-white placeholder-white/50 border border-white/30 focus:outline-none focus:ring-2 focus:ring-blue-400 text-center text-lg tracking-widest"
-            />
-            {error && (
-              <p className="text-red-400 text-sm font-medium">{error}</p>
-            )}
-            <button
-              type="submit"
-              disabled={loading || !password}
-              className="btn-primary w-full text-lg py-4 rounded-2xl disabled:opacity-50"
-            >
-              {loading ? '確認中...' : '解除'}
-            </button>
-          </form>
+        {error && (
+          <p className="text-red-400 text-sm font-medium mb-4">{error}</p>
         )}
+
+        <button
+          onClick={handleUnlock}
+          disabled={loading}
+          className="btn-primary w-full text-lg py-4 rounded-2xl disabled:opacity-50"
+        >
+          {loading ? '解除中...' : 'ロックを解除する'}
+        </button>
 
         <button
           onClick={logout}

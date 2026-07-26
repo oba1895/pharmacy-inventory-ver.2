@@ -79,6 +79,13 @@ export function initDatabase(): void {
     // カラムが既に存在する場合は無視
   }
 
+  // 既存DBにexpiry_dateカラムがない場合は追加
+  try {
+    db.exec('ALTER TABLE transactions ADD COLUMN expiry_date TEXT')
+  } catch {
+    // カラムが既に存在する場合は無視
+  }
+
   const userCount = (db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number }).count
 
   if (userCount === 0) {
